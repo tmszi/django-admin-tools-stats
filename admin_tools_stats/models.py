@@ -11,7 +11,10 @@
 
 from django.db import models
 from django.core.exceptions import FieldError, ValidationError
-from django.utils.encoding import python_2_unicode_compatible
+try:
+    from django.utils.encoding import python_2_unicode_compatible
+except ImportError:
+    python_2_unicode_compatible = None
 from django.utils.translation import ugettext_lazy as _
 from django.apps import apps
 import jsonfield.fields
@@ -27,8 +30,21 @@ operation = (
     ('Variance', 'Variance'),
 )
 
+class conditional_decorator(object):
+    def __init__(self, dec, condition):
+        self.decorator = dec
+        self.condition = condition
 
-@python_2_unicode_compatible
+    def __call__(self, func):
+        if not self.condition:
+            # Return the function unchanged, not decorated.
+            return func
+        return self.decorator(func)
+
+@conditional_decorator(
+    dec=python_2_unicode_compatible,
+    condition=python_2_unicode_compatible,
+)
 class DashboardStatsCriteria(models.Model):
     """
     To configure criteria for dashboard graphs
@@ -76,7 +92,10 @@ class DashboardStatsCriteria(models.Model):
             return u"%s" % self.criteria_name
 
 
-@python_2_unicode_compatible
+@conditional_decorator(
+    dec=python_2_unicode_compatible,
+    condition=python_2_unicode_compatible,
+)
 class DashboardStats(models.Model):
     """To configure graphs for dashboard
 
